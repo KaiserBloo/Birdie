@@ -47,6 +47,14 @@ def test_decision_prefers_close_common_alternative_over_rare_top_prediction() ->
     assert "common UK garden prior" in decision.decision_reason
 
 
+def test_decision_treats_azure_winged_magpie_as_magpie_hint() -> None:
+    decision = decide_classification([_prediction("Azure-winged magpie", 0.49, 1)])
+
+    assert decision.classification_status == "likely"
+    assert decision.display_label == "likely Magpie"
+    assert decision.display_confidence == 0.49
+
+
 def test_decision_uncertain_for_rare_top_without_close_common_alternative() -> None:
     decision = decide_classification(
         [

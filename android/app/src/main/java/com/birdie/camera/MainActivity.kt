@@ -87,9 +87,9 @@ class MainActivity : ComponentActivity() {
     private var lastStatusPostAt = 0L
     private var latestMotionStats = MotionStats(
         score = 0f,
-        threshold = 0.035f,
+        threshold = 0.05f,
         consecutiveMotionFrames = 0,
-        requiredConsecutiveFrames = 2,
+        requiredConsecutiveFrames = 3,
         motionActive = false,
         sampleCount = 0,
     )
@@ -184,6 +184,8 @@ class MainActivity : ComponentActivity() {
                             cameraExecutor,
                             MotionAnalyzer(
                                 roi = roi,
+                                threshold = MOTION_THRESHOLD,
+                                requiredConsecutiveFrames = MOTION_REQUIRED_FRAMES,
                                 onStats = ::onMotionStats,
                             ),
                         )
@@ -818,6 +820,8 @@ class MainActivity : ComponentActivity() {
         private const val DEFAULT_BACKEND_URL = "http://127.0.0.1:8000"
         private const val KEY_BACKEND_URL = "backend_url"
         private const val KEY_DEVICE_TOKEN = "device_token"
+        private const val MOTION_THRESHOLD = 0.05f
+        private const val MOTION_REQUIRED_FRAMES = 3
         private const val COMMAND_POLL_INTERVAL_MILLIS = 10_000L
         private const val STATUS_POST_INTERVAL_MILLIS = 60_000L
         private const val VISIT_CAPTURE_INTERVAL_MILLIS = 2_000L

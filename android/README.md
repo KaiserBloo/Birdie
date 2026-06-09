@@ -51,7 +51,7 @@ http://127.0.0.1:8000
 
 When the phone is unplugged, `127.0.0.1` means the phone itself. In that case, set the backend URL to one of:
 
-- your PC LAN address, currently `http://192.168.0.96:8000` on this setup
+- your backend LAN address, for example `http://<backend-lan-ip>:8767`
 - a Tailscale/WireGuard address if using VPN
 - `http://10.0.2.2:8000` only when running in the Android emulator
 

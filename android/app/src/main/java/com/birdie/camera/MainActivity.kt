@@ -815,7 +815,7 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val DEFAULT_BACKEND_URL = "http://192.168.0.96:8000"
+        private const val DEFAULT_BACKEND_URL = "http://127.0.0.1:8000"
         private const val KEY_BACKEND_URL = "backend_url"
         private const val KEY_DEVICE_TOKEN = "device_token"
         private const val COMMAND_POLL_INTERVAL_MILLIS = 10_000L

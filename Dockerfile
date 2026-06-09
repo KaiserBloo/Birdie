@@ -18,7 +18,14 @@ RUN apt-get update \
 COPY pyproject.toml README.md ./
 COPY src ./src
 
+ARG TORCH_VERSION=2.12.0+cpu
+ARG TORCHVISION_VERSION=0.27.0+cpu
+
 RUN python -m pip install --upgrade pip \
+    && python -m pip install \
+        --index-url https://download.pytorch.org/whl/cpu \
+        "torch==${TORCH_VERSION}" \
+        "torchvision==${TORCHVISION_VERSION}" \
     && python -m pip install ".[classifier]"
 
 RUN mkdir -p /data/media /data/hf-cache /data/torch-cache

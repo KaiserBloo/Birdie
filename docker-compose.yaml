@@ -1,0 +1,38 @@
+services:
+  birdie:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${BIRDIE_HOST_PORT:-8767}:8000"
+    volumes:
+      - birdie_data:/data
+    environment:
+      TZ: Europe/London
+      BIRDIE_DATA_DIR: /data
+      BIRDIE_DATABASE_PATH: /data/birdie.db
+      BIRDIE_MEDIA_DIR: /data/media
+      BIRDIE_ALERT_COOLDOWN_SECONDS: ${BIRDIE_ALERT_COOLDOWN_SECONDS:-30}
+      BIRDIE_CLASSIFIER: ${BIRDIE_CLASSIFIER:-birder}
+      BIRDIE_BIRDER_MODEL: ${BIRDIE_BIRDER_MODEL:-regnet_z_4g_eu-common256px}
+      BIRDIE_CLASSIFIER_TOP_K: ${BIRDIE_CLASSIFIER_TOP_K:-5}
+      BIRDIE_LOW_BATTERY_PERCENT: ${BIRDIE_LOW_BATTERY_PERCENT:-20}
+      BIRDIE_CRITICAL_BATTERY_PERCENT: ${BIRDIE_CRITICAL_BATTERY_PERCENT:-10}
+      BIRDIE_HIGH_TEMPERATURE_C: ${BIRDIE_HIGH_TEMPERATURE_C:-42}
+      BIRDIE_DEVICE_TOKEN: ${BIRDIE_DEVICE_TOKEN:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+volumes:
+  birdie_data:

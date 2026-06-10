@@ -53,7 +53,7 @@ class VisitSequenceClassifier:
 
     def classify(self, image_path: Path) -> list[Prediction]:
         self.calls += 1
-        if self.calls == 1:
+        if self.calls <= 2:
             return [
                 Prediction("Unknown", 0.55, 1, self.model_name),
                 Prediction("Eurasian blue tit", 0.08, 2, self.model_name),
@@ -62,6 +62,19 @@ class VisitSequenceClassifier:
             Prediction("Eurasian blue tit", 0.74, 1, self.model_name),
             Prediction("Azure tit", 0.02, 2, self.model_name),
         ]
+
+
+class CropOriginalClassifier:
+    model_name = "crop-original"
+
+    def __init__(self) -> None:
+        self.paths: list[str] = []
+
+    def classify(self, image_path: Path) -> list[Prediction]:
+        self.paths.append(image_path.name)
+        if image_path.name == "crop.jpg":
+            return [Prediction("Unknown", 0.82, 1, self.model_name)]
+        return [Prediction("Eurasian blue tit", 0.62, 1, self.model_name)]
 
 
 def test_health_and_config(tmp_path: Path) -> None:
@@ -147,6 +160,30 @@ def test_upload_image_creates_sighting_and_media(tmp_path: Path) -> None:
     crop = client.get(payload["media_urls"]["crop"])
     assert crop.status_code == 200
     assert crop.headers["content-type"] == "image/jpeg"
+
+
+def test_upload_uses_original_when_crop_classifies_worse(tmp_path: Path) -> None:
+    classifier = CropOriginalClassifier()
+    client = TestClient(create_app(_settings(tmp_path), classifier=classifier))
+
+    response = client.post(
+        "/events/upload",
+        data={
+            "device_id": "phone-window",
+            "roi_x": "0.25",
+            "roi_y": "0.25",
+            "roi_width": "0.5",
+            "roi_height": "0.5",
+        },
+        files={"image": ("bird.jpg", _jpeg_bytes(), "image/jpeg")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert classifier.paths == ["crop.jpg", "original.jpg"]
+    assert payload["display_label"] == "likely Blue Tit"
+    assert payload["classification_status"] == "likely"
+    assert payload["metadata"]["classification_source"] == "original"
 
 
 def test_visit_candidates_update_one_sighting_to_best_classification(tmp_path: Path) -> None:

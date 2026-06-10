@@ -10,7 +10,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
 
-from ..classifier import ClassifierUnavailableError, ImageClassifier
+from ..classifier import ClassifierUnavailableError, ImageClassifier, Prediction
 from ..config import Settings
 from ..database import connect
 from ..image_processing import build_roi, crop_image_to_roi
@@ -263,10 +263,11 @@ async def upload_event(
     cropped_image_path = (
         crop_image_to_roi(image_path, target_dir / "crop.jpg", roi) if image_path else None
     )
-    classification_image_path = cropped_image_path or image_path
     try:
-        predictions = (
-            classifier.classify(classification_image_path) if classification_image_path else []
+        predictions, classification_source = _classify_best_available_image(
+            classifier,
+            cropped_image_path=cropped_image_path,
+            image_path=image_path,
         )
     except ClassifierUnavailableError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -295,6 +296,7 @@ async def upload_event(
             "app_version": app_version,
             "upload_kind": upload_kind,
             "command_id": command_id,
+            "classification_source": classification_source,
         }.items()
         if value is not None
     }
@@ -448,13 +450,19 @@ def reclassify_sighting(
     except LookupError as exc:
         raise HTTPException(status_code=404, detail="sighting not found") from exc
 
-    classification_path = sighting.get("cropped_image_path") or sighting.get("media_path")
-    if not classification_path:
+    crop_path = sighting.get("cropped_image_path")
+    media_path = sighting.get("media_path")
+    if not crop_path and not media_path:
         raise HTTPException(status_code=400, detail="sighting has no image to classify")
 
-    image_path = resolve_media_path(settings.media_dir, classification_path)
+    cropped_image_path = resolve_media_path(settings.media_dir, crop_path) if crop_path else None
+    image_path = resolve_media_path(settings.media_dir, media_path) if media_path else None
     try:
-        predictions = classifier.classify(image_path)
+        predictions, _classification_source = _classify_best_available_image(
+            classifier,
+            cropped_image_path=cropped_image_path,
+            image_path=image_path,
+        )
     except ClassifierUnavailableError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     return sighting_response(
@@ -503,6 +511,42 @@ def _settings(request: Request) -> Settings:
 
 def _classifier(request: Request) -> ImageClassifier:
     return request.app.state.classifier
+
+
+def _classify_best_available_image(
+    classifier: ImageClassifier,
+    *,
+    cropped_image_path: Path | None,
+    image_path: Path | None,
+) -> tuple[list[Prediction], str | None]:
+    candidates = [
+        ("crop", cropped_image_path),
+        ("original", image_path),
+    ]
+    best_predictions: list[Prediction] | None = None
+    best_source: str | None = None
+    best_score = -1.0
+    first_error: ClassifierUnavailableError | None = None
+
+    for source, candidate_path in candidates:
+        if candidate_path is None:
+            continue
+        try:
+            predictions = classifier.classify(candidate_path)
+        except ClassifierUnavailableError as exc:
+            first_error = first_error or exc
+            continue
+        score = score_candidate(predictions)
+        if score > best_score:
+            best_predictions = predictions
+            best_source = source
+            best_score = score
+
+    if best_predictions is not None:
+        return best_predictions, best_source
+    if first_error is not None:
+        raise first_error
+    return [], None
 
 
 def _notifier(request: Request) -> Notifier:

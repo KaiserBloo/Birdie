@@ -7,6 +7,6 @@ data class Roi(
     val height: Float,
 ) {
     companion object {
-        val Default = Roi(x = 0.05f, y = 0.48f, width = 0.88f, height = 0.28f)
+        val Default = Roi(x = 0.03f, y = 0.46f, width = 0.92f, height = 0.34f)
     }
 }

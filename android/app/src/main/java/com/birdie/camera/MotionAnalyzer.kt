@@ -17,7 +17,7 @@ data class MotionStats(
 
 class MotionAnalyzer(
     private val roi: Roi,
-    private val threshold: Float = 0.035f,
+    private val threshold: Float = 0.042f,
     private val requiredConsecutiveFrames: Int = 2,
     private val minIntervalMillis: Long = 250L,
     private val onStats: (MotionStats) -> Unit,

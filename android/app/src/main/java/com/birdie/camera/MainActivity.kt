@@ -824,9 +824,9 @@ class MainActivity : ComponentActivity() {
         private const val MOTION_REQUIRED_FRAMES = 2
         private const val COMMAND_POLL_INTERVAL_MILLIS = 10_000L
         private const val STATUS_POST_INTERVAL_MILLIS = 60_000L
-        private const val VISIT_CAPTURE_INTERVAL_MILLIS = 2_000L
+        private const val VISIT_CAPTURE_INTERVAL_MILLIS = 750L
         private const val VISIT_QUIET_TIMEOUT_MILLIS = 8_000L
         private const val VISIT_MAX_RECORDING_MILLIS = 30_000L
-        private const val VISIT_MAX_CANDIDATES = 4
+        private const val VISIT_MAX_CANDIDATES = 6
     }
 }
